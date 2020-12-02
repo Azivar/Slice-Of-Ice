@@ -47,7 +47,7 @@ public class TransparentWindow : MonoBehaviour
         // See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms633591%28v=vs.85%29.aspx
         SetWindowLong(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
 
-        // Collin Code
+        // Collin Code is the best code
         SetWindowPos(hwnd, 0, 200, 200, 96, 96, 32 | 64);
 
     // Extend the window into the client area

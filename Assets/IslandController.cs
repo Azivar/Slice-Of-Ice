@@ -52,6 +52,7 @@ public class IslandController : MonoBehaviour
         if (frames % 30 == 0)
         {
             direction = Random.Range(0, 8);
+            frames = 0;
         }
 
         //to move the window based off the random direction
