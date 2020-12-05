@@ -26,10 +26,6 @@ public class TransparentWindow : MonoBehaviour
     [DllImport("Dwmapi.dll")]
     private static extern uint DwmExtendFrameIntoClientArea(IntPtr hWnd, ref MARGINS margins);
 
-    [DllImport("user32.dll")]
-    private static extern int SetWindowPos(IntPtr hwnd, int hwndInsertAfter, int x, int y, int cx, int cy, int uFlags);
-
-
     // Definitions of window styles
     const int GWL_STYLE = -16;
     const uint WS_POPUP = 0x80000000;
@@ -46,9 +42,6 @@ public class TransparentWindow : MonoBehaviour
         // Set properties of the window
         // See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms633591%28v=vs.85%29.aspx
         SetWindowLong(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-
-        // Collin Code is the best code
-        SetWindowPos(hwnd, 0, 200, 200, 96, 96, 32 | 64);
 
     // Extend the window into the client area
     // See: https://msdn.microsoft.com/en-us/library/windows/desktop/aa969512%28v=vs.85%29.aspx 
