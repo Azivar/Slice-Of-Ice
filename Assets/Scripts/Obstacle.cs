@@ -14,7 +14,7 @@ public class Obstacle : MonoBehaviour {
     void Update() {
         if (type == ObstacleType.WALL && this.transform.position.magnitude >= 2) {
             Destroy(this.gameObject);
-        } /* else if (type == ObstacleType.BOMB && !this.GetComponent<Animation>().IsPlaying("TheActualIceBombAnimation")) {
+        } /* else if (type == ObstacleType.BOMB && !this.GetComponent<Animation>().IsPlaying("IceBombAnimation")) {
             Destroy(this.gameObject);
         } */
     }

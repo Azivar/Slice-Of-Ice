@@ -269,12 +269,12 @@ public class GameManager : MonoBehaviour {
             if (points % Random.Range(200 - updatesPerSecond, 250 - updatesPerSecond) == 0) {
                 if (Obstacle.NumberOfWalls < 10) {
                     Obstacle.SendWall(updatesPerSecond, wall);
-                }
-            } /* else if (points % Random.Range(200 - updatesPerSecond, 250 - updatesPerSecond) == 0) {
-                if (Obstacle.NumberOfBombs < 10) {
+                }//This is the stuff to comment out if things go wrong------------------------------------------------------
+            }  else if (points % Random.Range(200 - updatesPerSecond, 250 - updatesPerSecond) == 0) {
+               /* if (Obstacle.NumberOfBombs < 5) {
                     Obstacle.SendBomb(bomb);
-                }
-            } */
+                }*/
+            } 
 
             // Increase difficulty
             if (points % 200 == 0) {
