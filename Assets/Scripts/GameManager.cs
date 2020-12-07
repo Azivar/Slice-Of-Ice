@@ -20,21 +20,17 @@ public class GameManager : MonoBehaviour {
 
     private int MAX_SCREEN_WIDTH = 96;
     private int MAX_SCREEN_HEIGHT = 96;
+    private int TASKBAR_SIZE = 40;
 
-    public GameObject wall, bomb;
     public float playerAcceleration = 0.3f;
-    public float maxSpeed = 0.8f;
+    public float maxSpeed = 0.9f;
     public float iceFriction = 0.03f;
-    public float screenPushForce = 60f;
+    public float screenPushForce = 0.4f;
+    public Sprite[] sprites, frozenSprites;
+    public AudioClip fallSound, earthquake, freezeSound;
 
-    public Sprite[] sprites;
-    public Sprite[] frozenSprites;
-    public int currentSpriteIndex;
-    public AudioClip fallSound;
-    public AudioClip earthquake;
-
-    private int posX, posY, whenToReset, points, direction, updatesPerSecond;
-    private bool moveIsland, playerDied;
+    private int posX, posY, whenToReset, points, direction, updatesPerSecond, currentSpriteIndex, timestampOfLastObstacle;
+    private bool moveIsland, playerDied, inputEnabled;
 
     private System.IntPtr hwnd;
 
@@ -60,28 +56,34 @@ public class GameManager : MonoBehaviour {
             Vector2 verticalMovementSpeed = new Vector2(0f, playerAcceleration);
             Vector2 horizontalMovementSpeed = new Vector2(playerAcceleration, 0f);
 
-            // Update direction penguin is facing
-            if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A)) {
-                currentSpriteIndex = 1;
-            } else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D)) {
-                currentSpriteIndex = 7;
-            } else if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W)) {
-                currentSpriteIndex = 3;
-            } else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S)) {
-                currentSpriteIndex = 5;
-            }
-            guy.GetComponent<SpriteRenderer>().sprite = sprites[currentSpriteIndex];
+            if (inputEnabled) {
+                // Update direction penguin is facing
+                if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A)) {
+                    currentSpriteIndex = 1;
+                } else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D)) {
+                    currentSpriteIndex = 7;
+                } else if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W)) {
+                    currentSpriteIndex = 3;
+                } else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S)) {
+                    currentSpriteIndex = 5;
+                }
+                guy.GetComponent<SpriteRenderer>().sprite = sprites[currentSpriteIndex];
 
-            // Move the guy
-            if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A)) {
-                guyPhysics.velocity += (guyPhysics.velocity.x > -maxSpeed) ? -horizontalMovementSpeed : Vector2.zero;
-            } if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D)) {
-                guyPhysics.velocity += (guyPhysics.velocity.x < maxSpeed) ? horizontalMovementSpeed : Vector2.zero;
-            } if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W)) {
-                guyPhysics.velocity += (guyPhysics.velocity.y < maxSpeed) ? verticalMovementSpeed : Vector2.zero;
-            } if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S)) {
-                guyPhysics.velocity += (guyPhysics.velocity.y > -maxSpeed) ? -verticalMovementSpeed : Vector2.zero;
+                // Move the guy
+                if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A)) {
+                    guyPhysics.velocity += (guyPhysics.velocity.x > -maxSpeed) ? -horizontalMovementSpeed : Vector2.zero;
+                }
+                if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D)) {
+                    guyPhysics.velocity += (guyPhysics.velocity.x < maxSpeed) ? horizontalMovementSpeed : Vector2.zero;
+                }
+                if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W)) {
+                    guyPhysics.velocity += (guyPhysics.velocity.y < maxSpeed) ? verticalMovementSpeed : Vector2.zero;
+                }
+                if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S)) {
+                    guyPhysics.velocity += (guyPhysics.velocity.y > -maxSpeed) ? -verticalMovementSpeed : Vector2.zero;
+                }
             }
+            
 
             // Check to see if you are falling off the ledge
             if (
@@ -132,10 +134,10 @@ public class GameManager : MonoBehaviour {
         Vector2 pushDirection;
         int x = 0;
 
-        // Do not get pushed by walls or bombs
+        // Remove all walls and bombs
         foreach (GameObject obstacle in GameObject.FindGameObjectsWithTag("Obstacle")) {
-            if (obstacle.TryGetComponent(out Collider2D c2d)) {
-                Physics2D.IgnoreCollision(guy.GetComponent<Collider2D>(), obstacle.GetComponent<Collider2D>());
+            if (obstacle.name != "Wall" && obstacle.name != "Bomb") {
+                Destroy(obstacle);
             }
         }
 
@@ -148,16 +150,16 @@ public class GameManager : MonoBehaviour {
         // What side of screen did he fall off of? Rotate and push him that direction
         if (guy.transform.position.x >= islandSize.x / 2) {
             guy.transform.Rotate(0f, 0f, -10f);
-            pushDirection = new Vector2(0.8f, 0f);
+            pushDirection = new Vector2(0.6f, 0f);
         } else if (guy.transform.position.x <= -islandSize.x / 2) {
             guy.transform.Rotate(0f, 0f, 10f);
-            pushDirection = new Vector2(-0.8f, 0f);
+            pushDirection = new Vector2(-0.6f, 0f);
         } else if (guy.transform.position.y >= islandSize.y / 2) {
             guy.transform.Rotate(0f, 0f, -10f);
-            pushDirection = new Vector2(0f, 0.8f);
+            pushDirection = new Vector2(0f, 0.6f);
         } else {
             guy.transform.Rotate(0f, 0f, 10f);
-            pushDirection = new Vector2(0f, -0.8f);
+            pushDirection = new Vector2(0f, -0.6f);
         }
 
         this.GetComponent<AudioSource>().clip = fallSound;
@@ -224,12 +226,12 @@ public class GameManager : MonoBehaviour {
         }
 
         else if (moveIsland) {
-            Vector3 verticalPushSpeed = new Vector3(0f, Time.fixedDeltaTime * screenPushForce, 0f);
-            Vector3 horizontalPushSpeed = new Vector3(Time.fixedDeltaTime * screenPushForce, 0f, 0f);
+            Vector3 verticalPushSpeed = new Vector3(0f, screenPushForce, 0f);
+            Vector3 horizontalPushSpeed = new Vector3(screenPushForce, 0f, 0f);
 
             // Game window moves based off of direction
             if (direction <= 2) {
-                if (!(posY - 1 <= 0)) { // Don't pass bottom of screen
+                if (!(posY - 1 <= 0)) { // Don't pass top of screen
                     posY -= 1;
                     if (guyPhysics.velocity.y > -maxSpeed)
                         guyPhysics.AddForce(-verticalPushSpeed);
@@ -238,12 +240,12 @@ public class GameManager : MonoBehaviour {
                 }
             }
             if (direction >= 5) {
-                if (!(posY + 1 >= Screen.currentResolution.height - MAX_SCREEN_HEIGHT)) { // Don't pass top of screen
+                if (!(posY + 1 >= Screen.currentResolution.height - MAX_SCREEN_HEIGHT - TASKBAR_SIZE)) { // Don't pass bottom of screen
                     posY += 1;
                     if (guyPhysics.velocity.y < maxSpeed)
                         guyPhysics.AddForce(verticalPushSpeed);
                 } else {
-                    posY = Screen.currentResolution.height - MAX_SCREEN_HEIGHT;
+                    posY = Screen.currentResolution.height - MAX_SCREEN_HEIGHT - TASKBAR_SIZE;
                 }
             }
             if (direction == 1 || direction == 3 || direction == 5) {
@@ -267,17 +269,20 @@ public class GameManager : MonoBehaviour {
 
             // Shoot an obstacle
             if (points % Random.Range(200 - updatesPerSecond, 250 - updatesPerSecond) == 0) {
-                if (Obstacle.NumberOfWalls < 10) {
-                    Obstacle.SendWall(updatesPerSecond, wall);
-                }//This is the stuff to comment out if things go wrong------------------------------------------------------
-            }  else if (points % Random.Range(200 - updatesPerSecond, 250 - updatesPerSecond) == 0) {
-               /* if (Obstacle.NumberOfBombs < 5) {
-                    Obstacle.SendBomb(bomb);
-                }*/
+                if (Obstacle.NumberOfWalls < 5 && points - timestampOfLastObstacle > 60) {
+                    Obstacle.SendWall(updatesPerSecond);
+                    timestampOfLastObstacle = points;
+                }
+            } else if (points % Random.Range(200 - updatesPerSecond, 250 - updatesPerSecond) == 0) {
+                if (Obstacle.NumberOfBombs < 5 && points - timestampOfLastObstacle > 30) {
+                    Obstacle.SendBomb();
+                    timestampOfLastObstacle = points;
+                }
             } 
 
             // Increase difficulty
             if (points % 200 == 0) {
+                screenPushForce += 0.025f;
                 Time.fixedDeltaTime = 1f / ++updatesPerSecond;
             }
 
@@ -297,14 +302,34 @@ public class GameManager : MonoBehaviour {
         guy.transform.localScale = new Vector2(1f, 1f);
         guy.GetComponent<SpriteRenderer>().sprite = sprites[currentSpriteIndex];
         updatesPerSecond = 40;
+        timestampOfLastObstacle = 0;
         points = 0;
         direction = 1;
         moveIsland = true;
         playerDied = false;
+        inputEnabled = true;
         whenToReset = Random.Range(50, 70);
         Time.fixedDeltaTime = 1f / updatesPerSecond;
 
         StartCoroutine(PlayIntro(5f));
         StartCoroutine(FreezeIsland(5f));
+    }
+
+    public void Close() {
+        Application.Quit();
+    }
+
+    public void Freeze(bool x) {
+        inputEnabled = !x;
+
+        if (x) {
+            this.GetComponent<AudioSource>().clip = freezeSound;
+            this.GetComponent<AudioSource>().Play();
+            guy.GetComponent<SpriteRenderer>().sprite = frozenSprites[currentSpriteIndex];
+            iceFriction = 0.01f;
+        } else {
+            guy.GetComponent<SpriteRenderer>().sprite = sprites[currentSpriteIndex];
+            iceFriction = 0.03f;
+        }
     }
 }
